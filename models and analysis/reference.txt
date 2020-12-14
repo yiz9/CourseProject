@@ -1,0 +1,4 @@
+https://github.com/stopwords-iso/stopwords-en/blob/master/stopwords-en.txt
+https://github.com/laserwave/plsa#readme
+http://times.cs.uiuc.edu/course/598f16/plsa-note.pdf
+http://sifaka.cs.uiuc.edu/czhai/pub/sigkdd04-ctm.pdf

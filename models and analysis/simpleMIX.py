@@ -15,17 +15,15 @@ import codecs
 # X : document-word matrix, N*M, each line is the number of terms that show up in the document
 def preprocessing(datasetFilePath, stopwordsFilePath):
     
-    # read the stopwords file
+
     file = codecs.open(stopwordsFilePath, 'r', 'utf-8')
     stopwords = [line.strip() for line in file] 
     file.close()
-    
-    # read the documents
+
     file = codecs.open(datasetFilePath, 'r', 'utf-8')
     documents = [document.strip() for document in file]
     file.close()
 
-    # number of documents
     N = len(documents)
 
     wordCounts = [];
@@ -61,17 +59,6 @@ def preprocessing(datasetFilePath, stopwordsFilePath):
                 X[i, j] = wordCounts[i][word];
 
     return N, M, word2id, id2word, X
-
-def initializeParameters():
-    for i in range(0, N):
-        normalization = sum(lamda[i, :])
-        for j in range(0, K):
-            lamda[i, j] /= normalization;
-
-    for i in range(0, K):
-        normalization = sum(theta[i, :])
-        for j in range(0, M):
-            theta[i, j] /= normalization;
 
 def EStep():
     for i in range(0, N):
@@ -130,16 +117,6 @@ def LogLikelihood():
 
 # output the params of model and top words of topics to files
 def output():
-    # document-topic distribution
-    # file = codecs.open(docTopicDist,'w','utf-8')
-    # for i in range(0, N):
-    #     tmp = ''
-    #     for j in range(0, K):
-    #         tmp += str(lamda[i, j]) + ' '
-    #     file.write(tmp + '\n')
-    # file.close()
-    
-    # topic-word distribution
     file = codecs.open(topicWordDist,'w','utf-8')
     for i in range(0, K):
         tmp = ''
@@ -147,14 +124,7 @@ def output():
             tmp += str(theta[i, j]) + ' '
         file.write(tmp + '\n')
     file.close()
-    
-    # dictionary
-    # file = codecs.open(dictionary,'w','utf-8')
-    # for i in range(0, M):
-    #     file.write(id2word[i] + '\n')
-    # file.close()
-    
-    # top words of each topic
+
     file = codecs.open(topicWords,'w','utf-8')
     for i in range(0, K):
         topicword = []
@@ -166,40 +136,31 @@ def output():
             tmp += word + ' '
         file.write(tmp + '\n')
     file.close()
-    
-# set the default params and read the params from cmd
+
 datasetFilePath = 'SARS.txt'
 stopwordsFilePath = 'stopwords.dic'  ##停止语句
 K = 5    # number of topic !!!
 maxIteration = 30
 threshold = 10.0
 topicWordsNum = 8
-#docTopicDist = 'docTopicDistribution.txt'
 topicWordDist = 'simple_sars_distribution.txt'
-#dictionary = 'dictionary.dic'
 topicWords = 'simple_sars.txt'
 
 N, M, word2id, id2word, X = preprocessing(datasetFilePath, stopwordsFilePath)
 
-# lamda[i, j] : p(zj|di)
 lamda = random.rand(N, K)/10+0.9
-
-# theta[i, j] : p(wj|zi)
 theta = random.rand(K, M)
 
-# p[i, j, k] : p(zk|di,wj)
 p = zeros([N, M, K])
 
-initializeParameters()
 
-# EM algorithm
 oldLoglikelihood = 1
 newLoglikelihood = 1
 for i in range(0, maxIteration):
     EStep()
     MStep()
     newLoglikelihood = LogLikelihood()
-    print("[", time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())), "] ", i+1, " iteration  ", str(newLoglikelihood))
+    print(i+1, " iteration  ", str(newLoglikelihood))
     if(oldLoglikelihood != 1 and newLoglikelihood - oldLoglikelihood < threshold):
         break
     oldLoglikelihood = newLoglikelihood

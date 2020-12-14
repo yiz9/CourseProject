@@ -1,31 +1,18 @@
 from numpy import zeros, int8, log, random
-# import pylab
 import sys
 import jieba
 import re
-import time
 import codecs
 
-
-# segmentation, stopwords filtering and document-word matrix generating
-# [return]:
-# N : number of documents
-# M : length of dictionary
-# word2id : a map mapping terms to their corresponding ids
-# id2word : a map mapping ids to terms
-# X : document-word matrix, N*M, each line is the number of terms that show up in the document
 def ccmix(datasetFilePath, stopwordsFilePath):
-    # read the stopwords file
     file = codecs.open(stopwordsFilePath, 'r', 'utf-8')
     stopwords = [line.strip() for line in file]
     file.close()
 
-    # read the documents
     file = codecs.open(datasetFilePath, 'r', 'utf-8')
     documents = [document.strip() for document in file]
     file.close()
 
-    # number of documents
     N = len(documents)
 
     wordCounts = [];
@@ -49,10 +36,8 @@ def ccmix(datasetFilePath, stopwordsFilePath):
                     wordCount[word] = 1
         wordCounts.append(wordCount);
 
-    # length of dictionary
     M = len(word2id)
 
-    # generate the document-word matrix
     X = zeros([N, M], int8)
     for word in word2id.keys():
         j = word2id[word]
@@ -63,29 +48,13 @@ def ccmix(datasetFilePath, stopwordsFilePath):
     return N, M, word2id, id2word, X
 
 
-def initializeParameters():
-    for i in range(0, N):
-        normalization = sum(lamdab[i, :])
-        for j in range(0, K):
-            lamdab[i, j] /= normalization;
-
-    for i in range(0, N):
-        normalization = sum(lamdac[i, :])
-        for j in range(0, K):
-            lamdac[i, j] /= normalization;
-
-    for i in range(0, K):
-        normalization = sum(theta[i, :])
-        for j in range(0, M):
-            theta[i, j] /= normalization;
-
 
 def EStep():
     for i in range(0, N):
         for j in range(0, M):
             denominator = 0;
             for k in range(0, K):
-                p[i, j, k] = theta[k, j] * lamdab[i, k] * lamdac[i,k]
+                p[i, j, k] = theta[k, j] * lamdab[i, k] * (1-lamdac[i,k])
                 denominator += p[i, j, k];
             if denominator == 0:
                 for k in range(0, K):
@@ -141,12 +110,7 @@ def LogLikelihood():
                 loglikelihood += X[i, j] * log(tmp)
     return loglikelihood
 
-
-# output the params of model and top words of topics to files
 def output():
-
-
-    # topic-word distribution
     file = codecs.open(topicWordDist, 'w', 'utf-8')
     for i in range(0, K):
         tmp = ''
@@ -155,7 +119,6 @@ def output():
         file.write(tmp + '\n')
     file.close()
 
-    # top words of each topic
     file = codecs.open(topicWords, 'w', 'utf-8')
     for i in range(0, K):
         topicword = []
@@ -169,7 +132,6 @@ def output():
     file.close()
 
 
-# set the default params and read the params from cmd
 datasetFilePath = 'combine_dataset.txt'
 stopwordsFilePath = 'stopwords.dic'  ##停止语句
 K = 5  # number of topic !!!
@@ -181,17 +143,13 @@ topicWords = 'ccmix_mix.txt'
 
 N, M, word2id, id2word, X = ccmix(datasetFilePath, stopwordsFilePath)
 
-# lamda[i, j] : p(zj|di)
 lamdab = random.rand(N, K)/5+0.8
 lamdac = random.rand(N, K)/4
 
-# theta[i, j] : p(wj|zi)
 theta = random.rand(K, M)
 
-# p[i, j, k] : p(zk|di,wj)
 p = zeros([N, M, K])
 
-initializeParameters()
 
 # EM algorithm
 oldLoglikelihood = 1
@@ -200,8 +158,7 @@ for i in range(0, maxIteration):
     EStep()
     MStep()
     newLoglikelihood = LogLikelihood()
-    print("[", time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())), "] ", i + 1, " iteration  ",
-          str(newLoglikelihood))
+    print(i + 1, " iteration  ", str(newLoglikelihood))
     if (oldLoglikelihood != 1 and newLoglikelihood - oldLoglikelihood < threshold):
         break
     oldLoglikelihood = newLoglikelihood
